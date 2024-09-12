@@ -105,7 +105,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} plan -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.destroy && '-destroy' || '' }} \
+          ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.action-args }}
 
     - name: ${{ inputs.tf-cli }} apply
@@ -116,7 +116,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} apply -input=false -auto-approve \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.destroy && '-destroy' || '' }} \
+          ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.action-args }}
 
     - name: PR Comment
