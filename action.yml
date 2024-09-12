@@ -32,15 +32,8 @@ inputs:
     description: Whether to run terraform validate
     required: false
     default: 'true'
-  test:
-    description: Whether to run terraform test
-    required: false
-    default: 'false'
-  test-args:
-    description: Additional arguments to pass to terraform test
-    required: false
   action:
-    description: The main terraform action to run ("plan", "apply", or blank to skip)
+    description: The main terraform action to run ("plan", "apply", or "test")
     required: false
   action-args:
     description: Additional arguments to pass to terraform plan or apply
@@ -115,13 +108,13 @@ runs:
 
     - name: ${{ inputs.tf-cli }} test
       id: test
-      if: fromJSON(inputs.test)
+      if: inputs.action == 'test'
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
         ${{ inputs.tf-cli }} test \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.test-args }}
+          ${{ inputs.action-args }}
 
     - name: ${{ inputs.tf-cli }} plan
       id: plan
@@ -161,7 +154,7 @@ runs:
         validate: ${{ inputs.validate }}
         validate-outcome: ${{ steps.validate.outcome }}
         validate-stdout: ${{ steps.validate.outputs.stdout }}
-        test: ${{ inputs.test }}
+        test: ${{ inputs.action == 'test' }}
         test-outcome: ${{ steps.test.outcome }}
         test-stdout: ${{ steps.test.outputs.stdout }}
         test-stderr: ${{ steps.test.outputs.stderr }}
