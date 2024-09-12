@@ -29,6 +29,13 @@ inputs:
     description: Whether to run terraform validate
     required: false
     default: 'true'
+  test:
+    description: Whether to run terraform test
+    required: false
+    default: 'false'
+  test-args:
+    description: Additional arguments to pass to terraform test
+    required: false
   action:
     description: The main terraform action to run ("plan", "apply", or blank to skip)
     required: false
@@ -39,6 +46,12 @@ inputs:
     description: Whether to destroy the infrastructure
     required: false
     default: 'false'
+  tfvars-content:
+    description: The content of the variable file to use.
+    required: false
+  tfvars-json-content:
+    description: The content of the variable file to use in JSON format.
+    required: false
   comment:
     description: Whether to comment on the PR with the results
     required: false
@@ -48,12 +61,6 @@ inputs:
     required: false
   comment-identifier:
     description: The identifier to use in the PR comment
-    required: false
-  tfvars-content:
-    description: The content of the variable file to use.
-    required: false
-  tfvars-json-content:
-    description: The content of the variable file to use in JSON format.
     required: false
 
 runs:
@@ -97,6 +104,16 @@ runs:
         ${{ inputs.tf-cli }} validate \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
+    - name: ${{ inputs.tf-cli }} test
+      id: test
+      if: fromJSON(inputs.test)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} test \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.test-args }}
+
     - name: ${{ inputs.tf-cli }} plan
       id: plan
       if: inputs.action == 'plan'
@@ -135,6 +152,10 @@ runs:
         validate: ${{ inputs.validate }}
         validate-outcome: ${{ steps.validate.outcome }}
         validate-stdout: ${{ steps.validate.outputs.stdout }}
+        test: ${{ inputs.test }}
+        test-outcome: ${{ steps.test.outcome }}
+        test-stdout: ${{ steps.test.outputs.stdout }}
+        test-stderr: ${{ steps.test.outputs.stderr }}
         plan: ${{ inputs.action == 'plan' }}
         plan-outcome: ${{ steps.plan.outcome }}
         plan-stdout: ${{ steps.plan.outputs.stdout }}
