@@ -13,7 +13,8 @@ inputs:
     required: false
   directory:
     description: The directory containing the Terraform configuration
-    required: true
+    required: false
+    default: .
   init:
     description: Whether to run terraform init
     required: false
