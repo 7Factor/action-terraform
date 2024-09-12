@@ -11,6 +11,9 @@ inputs:
     description: The actual Terraform cli to use
     default: terraform
     required: false
+  aws-account:
+    description: An identifier for the AWS account that is changed
+    required: true
   directory:
     description: The directory containing the Terraform configuration
     required: true
@@ -118,7 +121,7 @@ runs:
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
       with:
         directory: ${{ inputs.directory }}
-        aws-account: ${{ inputs.aws_deploy_to_account }}
+        aws-account: ${{ inputs.aws-account }}
         fmt: ${{ inputs.fmt }}
         fmt-outcome: ${{ steps.fmt.outcome }}
         fmt-stdout: ${{ steps.fmt.outputs.stdout }}
