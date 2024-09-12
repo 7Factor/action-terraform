@@ -37,7 +37,7 @@ inputs:
     description: The main terraform action to run ("plan", "apply", or "test")
     required: false
   action-args:
-    description: Additional arguments to pass to terraform plan or apply
+    description: Additional arguments to pass to terraform plan, apply, or test
     required: false
   destroy:
     description: Whether to destroy the infrastructure
