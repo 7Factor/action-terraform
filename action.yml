@@ -1,0 +1,141 @@
+name: Run Terraform
+
+description: Runs various Terraform commands using the Terraform CLI.
+
+inputs:
+  github-token:
+    description: The GitHub token to use
+    default: ${{ github.token }}
+    required: false
+  tf-cli:
+    description: The actual Terraform cli to use
+    default: terraform
+    required: false
+  directory:
+    description: The directory containing the Terraform configuration
+    required: true
+  init:
+    description: Whether to run terraform init
+    required: false
+    default: 'true'
+  init-args:
+    description: Additional arguments to pass to terraform init
+    required: false
+  fmt:
+    description: Whether to run terraform fmt
+    required: false
+    default: 'true'
+  validate:
+    description: Whether to run terraform validate
+    required: false
+    default: 'true'
+  action:
+    description: The main terraform action to run ("plan", "apply", or blank to skip)
+    required: false
+  action-args:
+    description: Additional arguments to pass to terraform plan or apply
+    required: false
+  destroy:
+    description: Whether to destroy the infrastructure
+    required: false
+    default: 'false'
+  comment:
+    description: Whether to comment on the PR with the results
+    required: false
+    default: 'true'
+  comment-header:
+    description: The header to use in the PR comment
+    required: false
+  comment-identifier:
+    description: The identifier to use in the PR comment
+    required: false
+  tfvars-content:
+    description: The content of the variable file to use.
+    required: false
+  tfvars-json-content:
+    description: The content of the variable file to use in JSON format.
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Create tfvars variable files
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.tfvars-content }}" ]; then
+          echo '${{ inputs.tfvars-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars
+        fi
+        if [ -n "${{ inputs.tfvars-json-content }}" ]; then
+          echo '${{ inputs.tfvars-json-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars.json
+        fi
+
+    - name: ${{ inputs.tf-cli }} fmt
+      id: fmt
+      if: fromJSON(inputs.fmt)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} fmt -check \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
+
+    - name: ${{ inputs.tf-cli }} init
+      id: init
+      if: fromJSON(inputs.init)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} init -input=false \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.init-args }}
+
+    - name: ${{ inputs.tf-cli }} validate
+      id: validate
+      if: fromJSON(inputs.validate)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} validate \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
+
+    - name: ${{ inputs.tf-cli }} plan
+      id: plan
+      if: inputs.action == 'plan'
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} plan -input=false \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.destroy && '-destroy' || '' }} \
+          ${{ inputs.action-args }}
+
+    - name: ${{ inputs.tf-cli }} apply
+      id: apply
+      if: inputs.action == 'apply' && github.event_name != 'pull_request'
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} apply -input=false -auto-approve \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.destroy && '-destroy' || '' }} \
+          ${{ inputs.action-args }}
+
+    - name: PR Comment
+      uses: 7Factor/action-pr-comment-terraform@v1
+      if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
+      with:
+        header: ${{ inputs.comment-header }}
+        comment-identifier: ${{ inputs.comment-identifier }}
+        directory: ${{ inputs.directory }}
+        fmt: ${{ inputs.fmt }}
+        fmt-outcome: ${{ steps.fmt.outcome }}
+        fmt-stdout: ${{ steps.fmt.outputs.stdout }}
+        init: ${{ inputs.init }}
+        init-outcome: ${{ steps.init.outcome }}
+        init-stdout: ${{ steps.init.outputs.stdout }}
+        validate: ${{ inputs.validate }}
+        validate-outcome: ${{ steps.validate.outcome }}
+        validate-stdout: ${{ steps.validate.outputs.stdout }}
+        plan: ${{ inputs.action == 'plan' }}
+        plan-outcome: ${{ steps.plan.outcome }}
+        plan-stdout: ${{ steps.plan.outputs.stdout }}
+        plan-stderr: ${{ steps.plan.outputs.stderr }}
