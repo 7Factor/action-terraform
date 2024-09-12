@@ -145,7 +145,6 @@ runs:
       with:
         header: ${{ inputs.comment-header }}
         comment-identifier: ${{ inputs.comment-identifier || inputs.directory }}
-        directory: ${{ inputs.directory }}
         fmt: ${{ inputs.fmt }}
         fmt-outcome: ${{ steps.fmt.outcome }}
         fmt-stdout: ${{ steps.fmt.outputs.stdout }}
