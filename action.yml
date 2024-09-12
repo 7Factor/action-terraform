@@ -101,7 +101,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} init -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.tfbackend-content != '' && format('-backend-config={}/action.tfbackend', github.action_path) }} \
+          ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) }} \
           ${{ inputs.init-args }}
 
     - name: ${{ inputs.tf-cli }} validate
