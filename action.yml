@@ -13,13 +13,17 @@ inputs:
     required: false
   directory:
     description: The directory containing the Terraform configuration
-    required: true
+    required: false
+    default: .
   init:
     description: Whether to run terraform init
     required: false
     default: 'true'
   init-args:
     description: Additional arguments to pass to terraform init
+    required: false
+  tfbackend-content:
+    description: The content of the backend file to use.
     required: false
   fmt:
     description: Whether to run terraform fmt
@@ -29,18 +33,11 @@ inputs:
     description: Whether to run terraform validate
     required: false
     default: 'true'
-  test:
-    description: Whether to run terraform test
-    required: false
-    default: 'false'
-  test-args:
-    description: Additional arguments to pass to terraform test
-    required: false
   action:
-    description: The main terraform action to run ("plan", "apply", or blank to skip)
+    description: The main terraform action to run ("plan", "apply", or "test")
     required: false
   action-args:
-    description: Additional arguments to pass to terraform plan or apply
+    description: Additional arguments to pass to terraform plan, apply, or test
     required: false
   destroy:
     description: Whether to destroy the infrastructure
@@ -66,6 +63,11 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Create tfbackend file
+      if: inputs.tfbackend-content != ''
+      shell: bash
+      run: echo '${{ inputs.tfbackend-content }}' > ${{ github.action_path }}/action.tfbackend
+
     - name: Create tfvars variable files
       shell: bash
       run: |
@@ -93,6 +95,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} init -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
 
     - name: ${{ inputs.tf-cli }} validate
@@ -106,13 +109,13 @@ runs:
 
     - name: ${{ inputs.tf-cli }} test
       id: test
-      if: fromJSON(inputs.test)
+      if: inputs.action == 'test'
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
         ${{ inputs.tf-cli }} test \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.test-args }}
+          ${{ inputs.action-args }}
 
     - name: ${{ inputs.tf-cli }} plan
       id: plan
@@ -141,8 +144,7 @@ runs:
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
       with:
         header: ${{ inputs.comment-header }}
-        comment-identifier: ${{ inputs.comment-identifier }}
-        directory: ${{ inputs.directory }}
+        comment-identifier: ${{ inputs.comment-identifier || inputs.directory }}
         fmt: ${{ inputs.fmt }}
         fmt-outcome: ${{ steps.fmt.outcome }}
         fmt-stdout: ${{ steps.fmt.outputs.stdout }}
@@ -152,7 +154,7 @@ runs:
         validate: ${{ inputs.validate }}
         validate-outcome: ${{ steps.validate.outcome }}
         validate-stdout: ${{ steps.validate.outputs.stdout }}
-        test: ${{ inputs.test }}
+        test: ${{ inputs.action == 'test' }}
         test-outcome: ${{ steps.test.outcome }}
         test-stdout: ${{ steps.test.outputs.stdout }}
         test-stderr: ${{ steps.test.outputs.stderr }}
