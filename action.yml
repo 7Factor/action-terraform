@@ -139,7 +139,7 @@ runs:
           ${{ inputs.action-args }}
 
     - name: PR Comment
-      uses: 7Factor/action-pr-comment-terraform@v1
+      uses: 7Factor/action-pr-comment-terraform@jwood/remove_directory
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
       with:
         header: ${{ inputs.comment-header }}
