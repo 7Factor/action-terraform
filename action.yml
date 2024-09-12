@@ -57,7 +57,7 @@ inputs:
     required: false
   comment-identifier:
     description: The identifier to use in the PR comment
-    required: false
+    required: true
 
 runs:
   using: composite
