@@ -21,11 +21,8 @@ inputs:
   init-args:
     description: Additional arguments to pass to terraform init
     required: false
-  backend-tfvars-content:
-    description: The content of the backend variable file to use.
-    required: false
-  backend-tfvars-json-content:
-    description: The content of the backend variable file to use in JSON format.
+  tfbackend-content:
+    description: The content of the backend file to use.
     required: false
   fmt:
     description: Whether to run terraform fmt
@@ -72,15 +69,14 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Create tfbackend file
+      if: inputs.tfbackend-content != ''
+      shell: bash
+      run: echo '${{ inputs.tfbackend-content }}' > ${{ github.action_path }}/action.tfbackend
+
     - name: Create tfvars variable files
       shell: bash
       run: |
-        if [ -n "${{ inputs.backend-tfvars-content }}" ]; then
-          echo '${{ inputs.backend-tfvars-content }}' > ${{ github.action_path }}/backend.tfvars
-        fi
-        if [ -n "${{ inputs.backend-tfvars-json-content }}" ]; then
-          echo '${{ inputs.backend-tfvars-json-content }}' > ${{ github.action_path }}/backend.tfvars.json
-        fi
         if [ -n "${{ inputs.tfvars-content }}" ]; then
           echo '${{ inputs.tfvars-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars
         fi
@@ -105,8 +101,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} init -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.backend-tfvars-content != '' && format('-backend-config={}/backend.tfvars', github.action_path) }} \
-          ${{ inputs.backend-tfvars-json-content != '' && format('-backend-config={}/backend.tfvars.json', github.action_path) }} \
+          ${{ inputs.tfbackend-content != '' && format('-backend-config={}/action.tfbackend', github.action_path) }} \
           ${{ inputs.init-args }}
 
     - name: ${{ inputs.tf-cli }} validate
