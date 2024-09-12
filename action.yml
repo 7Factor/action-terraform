@@ -69,16 +69,16 @@ runs:
           echo '${{ inputs.tfvars-json-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars.json
         fi
 
-    - name: terraform fmt
+    - name: ${{ inputs.tf-cli }} fmt
       id: fmt
       if: fromJSON(inputs.fmt)
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
-        terraform fmt -check \
+        ${{ inputs.tf-cli }} fmt -check \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
-    - name: terraform init
+    - name: ${{ inputs.tf-cli }} init
       id: init
       if: fromJSON(inputs.init)
       working-directory: ${{ inputs.directory }}
@@ -88,7 +88,7 @@ runs:
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ inputs.init-args }}
 
-    - name: terraform validate
+    - name: ${{ inputs.tf-cli }} validate
       id: validate
       if: fromJSON(inputs.validate)
       working-directory: ${{ inputs.directory }}
@@ -97,7 +97,7 @@ runs:
         ${{ inputs.tf-cli }} validate \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
-    - name: terraform plan
+    - name: ${{ inputs.tf-cli }} plan
       id: plan
       if: inputs.action == 'plan'
       working-directory: ${{ inputs.directory }}
@@ -108,7 +108,7 @@ runs:
           ${{ inputs.destroy && '-destroy' || '' }} \
           ${{ inputs.action-args }}
 
-    - name: terraform apply
+    - name: ${{ inputs.tf-cli }} apply
       id: apply
       if: inputs.action == 'apply' && github.event_name != 'pull_request'
       working-directory: ${{ inputs.directory }}
