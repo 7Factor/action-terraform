@@ -43,6 +43,12 @@ inputs:
     description: Whether to comment on the PR with the results
     required: false
     default: 'true'
+  tfvars-content:
+    description: The content of the variable file to use.
+    required: false
+  tfvars-json-content:
+    description: The content of the variable file to use in JSON format.
+    required: false
 
 runs:
   using: composite
@@ -50,17 +56,11 @@ runs:
     - name: Create tfvars variable files
       shell: bash
       run: |
-        if [ -n "${{ inputs.tfvars_content }}" ]; then
-          echo '${{ inputs.tfvars_content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars
+        if [ -n "${{ inputs.tfvars-content }}" ]; then
+          echo '${{ inputs.tfvars-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars
         fi
-        if [ -n "${{ inputs.tfvars_json_content }}" ]; then
-            echo '${{ inputs.tfvars_json_content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars.json
-        fi
-        if [ -n "${{ secrets.tfvars_content }}" ]; then
-            echo '${{ secrets.tfvars_content }}' > ${{ inputs.directory }}/secret-action-variables.auto.tfvars
-        fi
-        if [ -n "${{ secrets.tfvars_json_content }}" ]; then
-            echo '${{ secrets.tfvars_json_content }}' > ${{ inputs.directory }}/secret-action-variables.auto.tfvars.json
+        if [ -n "${{ inputs.tfvars-json-content }}" ]; then
+          echo '${{ inputs.tfvars-json-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars.json
         fi
 
     - name: terraform fmt
