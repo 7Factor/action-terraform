@@ -126,7 +126,6 @@ runs:
         header: ${{ inputs.comment-header }}
         comment-identifier: ${{ inputs.comment-identifier }}
         directory: ${{ inputs.directory }}
-        aws-account: ${{ inputs.aws-account }}
         fmt: ${{ inputs.fmt }}
         fmt-outcome: ${{ steps.fmt.outcome }}
         fmt-stdout: ${{ steps.fmt.outputs.stdout }}
