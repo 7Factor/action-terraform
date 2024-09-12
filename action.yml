@@ -120,7 +120,7 @@ runs:
           ${{ inputs.action-args }}
 
     - name: PR Comment
-      uses: 7Factor/action-pr-comment-terraform@jwood/more_steps
+      uses: 7Factor/action-pr-comment-terraform@v1
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
       with:
         header: ${{ inputs.comment-header }}
