@@ -11,9 +11,6 @@ inputs:
     description: The actual Terraform cli to use
     default: terraform
     required: false
-  aws-account:
-    description: An identifier for the AWS account that is changed
-    required: true
   directory:
     description: The directory containing the Terraform configuration
     required: true
@@ -46,6 +43,12 @@ inputs:
     description: Whether to comment on the PR with the results
     required: false
     default: 'true'
+  comment-header:
+    description: The header to use in the PR comment
+    required: false
+  comment-identifier:
+    description: The identifier to use in the PR comment
+    required: false
   tfvars-content:
     description: The content of the variable file to use.
     required: false
@@ -120,6 +123,8 @@ runs:
       uses: 7Factor/action-pr-comment-terraform@jwood/more_steps
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
       with:
+        header: ${{ inputs.comment-header }}
+        comment-identifier: ${{ inputs.comment-identifier }}
         directory: ${{ inputs.directory }}
         aws-account: ${{ inputs.aws-account }}
         fmt: ${{ inputs.fmt }}
