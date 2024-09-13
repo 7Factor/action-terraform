@@ -84,7 +84,7 @@ runs:
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
-        ${{ inputs.tf-cli }} fmt -check \
+        ${{ inputs.tf-cli }} fmt -check -diff \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
     - name: ${{ inputs.tf-cli }} init
