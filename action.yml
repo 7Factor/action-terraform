@@ -148,12 +148,15 @@ runs:
         fmt: ${{ inputs.fmt }}
         fmt-outcome: ${{ steps.fmt.outcome }}
         fmt-stdout: ${{ steps.fmt.outputs.stdout }}
+        fmt-stderr: ${{ steps.fmt.outputs.stderr }}
         init: ${{ inputs.init }}
         init-outcome: ${{ steps.init.outcome }}
         init-stdout: ${{ steps.init.outputs.stdout }}
+        init-stderr: ${{ steps.init.outputs.stderr }}
         validate: ${{ inputs.validate }}
         validate-outcome: ${{ steps.validate.outcome }}
         validate-stdout: ${{ steps.validate.outputs.stdout }}
+        validate-stderr: ${{ steps.validate.outputs.stderr }}
         test: ${{ inputs.action == 'test' }}
         test-outcome: ${{ steps.test.outcome }}
         test-stdout: ${{ steps.test.outputs.stdout }}
