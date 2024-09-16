@@ -188,6 +188,6 @@ runs:
         ${{ inputs.tf-cli }} output -no-color \
           ${{ inputs.output-args }} \
           > ${{ github.action_path }}/output
-        echo "$(cat ${{ github.action_path }}/output)"
+        ${{ inputs.tf-cli }} output -no-color
         set -e
         echo "output=$(cat ${{ github.action_path }}/output)" >> "$GITHUB_OUTPUT"
