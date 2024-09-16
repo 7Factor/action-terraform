@@ -184,7 +184,7 @@ runs:
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
-        ${{ inputs.tf-cli }} output \
+        ${{ inputs.tf-cli }} output -no-color \
           ${{ inputs.output-args }} \
           > ${{ github.action_path }}/output
         set -e
