@@ -50,6 +50,7 @@ inputs:
   output-args:
     description: Additional arguments to pass to terraform output
     required: false
+    default: -json
   tfvars-content:
     description: The content of the variable file to use.
     required: false
