@@ -43,6 +43,14 @@ inputs:
     description: Whether to destroy the infrastructure
     required: false
     default: 'false'
+  output:
+    description: Whether to run terraform output
+    required: false
+    default: 'false'
+  output-args:
+    description: Additional arguments to pass to terraform output
+    required: false
+    default: -json
   tfvars-content:
     description: The content of the variable file to use.
     required: false
@@ -59,6 +67,11 @@ inputs:
   comment-identifier:
     description: The identifier to use in the PR comment
     required: false
+
+outputs:
+  output:
+    description: The output of the terraform output command
+    value: ${{ steps.output.outputs.output }}
 
 runs:
   using: composite
@@ -165,3 +178,15 @@ runs:
         plan-outcome: ${{ steps.plan.outcome }}
         plan-stdout: ${{ steps.plan.outputs.stdout }}
         plan-stderr: ${{ steps.plan.outputs.stderr }}
+
+    - name: ${{ inputs.tf-cli }} output
+      id: output
+      if: fromJSON(inputs.output)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} output -no-color \
+          ${{ inputs.output-args }} \
+          > ${{ github.action_path }}/output
+        set -e
+        echo "output=$(cat ${{ github.action_path }}/output)" >> "$GITHUB_OUTPUT"
