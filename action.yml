@@ -114,7 +114,7 @@ runs:
           ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
 
-    - name: ${{ inputs.tf-cli }} workspace select -or-create
+    - name: ${{ inputs.tf-cli }} workspace select
       id: workspace
       if: inputs.workspace && !env.TF_WORKSPACE
       working-directory: ${{ inputs.directory }}
