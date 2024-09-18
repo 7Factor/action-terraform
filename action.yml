@@ -151,33 +151,71 @@ runs:
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.action-args }}
+        
+    - name: Build PR Comment
+      id: comment
+      if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      env:
+        # Capture the stdout/stderr in env vars to get them from process in the script to avoid unescaped quote issues
+        header: ${{ inputs.comment-header }}
+        fmtStdout: ${{ steps.fmt.outputs.stdout }}
+        fmtStderr: ${{ steps.fmt.outputs.stderr }}
+        initStdout: ${{ steps.init.outputs.stdout }}
+        initStderr: ${{ steps.init.outputs.stderr }}
+        validateStdout: ${{ steps.validate.outputs.stdout }}
+        validateStderr: ${{ steps.validate.outputs.stderr }}
+        testStdout: ${{ steps.test.outputs.stdout }}
+        testStderr: ${{ steps.test.outputs.stderr }}
+        planStdout: ${{ steps.plan.outputs.stdout }}
+        planStderr: ${{ steps.plan.outputs.stderr }}
+      with:
+        github-token: ${{ inputs.github-token }}
+        result-encoding: string
+        script: |
+          const content = {
+            header: `${process.env.header}`,
+            fmt: {
+              enabled: ${{ inputs.fmt }},
+              outcome: "${{ steps.fmt.outcome }}",
+              stdout: `${process.env.fmtStdout}`,
+              stderr: `${process.env.fmtStderr}`
+            },
+            init: {
+              enabled: ${{ inputs.init }},
+              outcome: "${{ steps.init.outcome }}",
+              stdout: `${process.env.initStdout}`,
+              stderr: `${process.env.initStderr}`
+            },
+            validate: {
+              enabled: ${{ inputs.validate }},
+              outcome: "${{ steps.validate.outcome }}",
+              stdout: `${process.env.validateStdout}`,
+              stderr: `${process.env.validateStderr}`
+            },
+            test: {
+              enabled: ${{ inputs.test }},
+              outcome: "${{ steps.test.outcome }}",
+              stdout: `${process.env.testStdout}`,
+              stderr: `${process.env.testStderr}`
+            },
+            plan: {
+              enabled: ${{ inputs.plan }},
+              outcome: "${{ steps.plan.outcome }}",
+              stdout: `${process.env.planStdout}`,
+              stderr: `${process.env.planStderr}`
+            }
+          }
+          const terraformComment = require('${{ github.action_path }}/terraform_comment.js')
+          return terraformComment(context, content)
 
     - name: PR Comment
-      uses: 7Factor/action-pr-comment-terraform@v1
+      uses: 7Factor/action-pr-comment@v1
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
       with:
-        header: ${{ inputs.comment-header }}
-        comment-identifier: ${{ inputs.comment-identifier || inputs.directory }}
-        fmt: ${{ inputs.fmt }}
-        fmt-outcome: ${{ steps.fmt.outcome }}
-        fmt-stdout: ${{ steps.fmt.outputs.stdout }}
-        fmt-stderr: ${{ steps.fmt.outputs.stderr }}
-        init: ${{ inputs.init }}
-        init-outcome: ${{ steps.init.outcome }}
-        init-stdout: ${{ steps.init.outputs.stdout }}
-        init-stderr: ${{ steps.init.outputs.stderr }}
-        validate: ${{ inputs.validate }}
-        validate-outcome: ${{ steps.validate.outcome }}
-        validate-stdout: ${{ steps.validate.outputs.stdout }}
-        validate-stderr: ${{ steps.validate.outputs.stderr }}
-        test: ${{ inputs.action == 'test' }}
-        test-outcome: ${{ steps.test.outcome }}
-        test-stdout: ${{ steps.test.outputs.stdout }}
-        test-stderr: ${{ steps.test.outputs.stderr }}
-        plan: ${{ inputs.action == 'plan' }}
-        plan-outcome: ${{ steps.plan.outcome }}
-        plan-stdout: ${{ steps.plan.outputs.stdout }}
-        plan-stderr: ${{ steps.plan.outputs.stderr }}
+        github-token: ${{ inputs.github-token }}
+        comment-identifier: ${{ inputs.comment-identifier }}
+        comment-body: ${{ steps.comment.outputs.result }}
 
     - name: ${{ inputs.tf-cli }} output
       id: output
