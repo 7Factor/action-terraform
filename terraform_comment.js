@@ -47,6 +47,27 @@ ${outcome !== 'skipped' ? createInitDetails(stdout, stderr) : ''}
     ` : '';
 };
 
+const createWorkspaceDetails = (stdout, stderr) => {
+    return `
+
+<details><summary>Show Workspace Select Details</summary>
+
+\`\`\`\n
+${stdout}${stderr ? `\n${stderr}` : ''}
+\`\`\`
+
+</details>
+    `;
+}
+
+const createWorkspaceOutput = ({enabled, outcome, stdout, stderr}) => {
+    return enabled ? `
+
+#### Terraform Workspace Select 🤖 \`${outcome}\`
+${outcome !== 'skipped' ? createWorkspaceDetails(stdout, stderr) : ''}
+    ` : '';
+}
+
 const createValidateDetails = (stdout, stderr) => {
     return `
 
@@ -110,11 +131,12 @@ ${outcome !== 'skipped' ? createPlanDetails(stdout, stderr) : ''}
     ` : '';
 };
 
-const createCommentBody = ({actor, eventName, workflow}, {header, fmt, init, validate, test, plan}) => {
+const createCommentBody = ({actor, eventName, workflow}, {header, fmt, init, workspace, validate, test, plan}) => {
     return `
 ${createHeader(header)}
 ${createFmtOutput(fmt)}
 ${createInitOutput(init)}
+${createWorkspaceOutput(workspace)}
 ${createValidateOutput(validate)}
 ${createTestOutput(test)}
 ${createPlanOutput(plan)}

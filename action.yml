@@ -15,6 +15,18 @@ inputs:
     description: The directory containing the Terraform configuration
     required: false
     default: .
+  workspace:
+    description: The Terraform workspace to use
+    required: false
+  workspace-select:
+    description: |
+      Whether to run terraform workspace select. Requires workspace input and the TF_WORKSPACE env var to not be set.
+    required: false
+    default: 'true'
+  workspace-create-if-missing:
+    description: Whether to create the workspace if it does not exist. Requires workspace-select input to be true.
+    required: false
+    default: 'true'
   init:
     description: Whether to run terraform init
     required: false
@@ -111,6 +123,17 @@ runs:
           ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
 
+    - name: ${{ inputs.tf-cli }} workspace select
+      id: workspace
+      if: fromJSON(inputs.workspace-select) && inputs.workspace && !env.TF_WORKSPACE
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} workspace select \
+          ${{ fromJSON(inputs.workspace-create-if-missing) && '-or-create' || '' }} \
+          ${{ inputs.workspace }} \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
+
     - name: ${{ inputs.tf-cli }} validate
       id: validate
       if: fromJSON(inputs.validate)
@@ -163,6 +186,8 @@ runs:
         fmtStderr: ${{ steps.fmt.outputs.stderr }}
         initStdout: ${{ steps.init.outputs.stdout }}
         initStderr: ${{ steps.init.outputs.stderr }}
+        workspaceStdout: ${{ steps.workspace.outputs.stdout }}
+        workspaceStderr: ${{ steps.workspace.outputs.stderr }}
         validateStdout: ${{ steps.validate.outputs.stdout }}
         validateStderr: ${{ steps.validate.outputs.stderr }}
         testStdout: ${{ steps.test.outputs.stdout }}
@@ -186,6 +211,12 @@ runs:
               outcome: "${{ steps.init.outcome }}",
               stdout: `${process.env.initStdout}`,
               stderr: `${process.env.initStderr}`
+            },
+            workspace: {
+              enabled: ${{ fromJSON(inputs.workspace-select) && !!inputs.workspace && !env.TF_WORKSPACE }},
+              outcome: "${{ steps.workspace.outcome }}",
+              stdout: `${process.env.workspaceStdout}`,
+              stderr: `${process.env.workspaceStderr}`
             },
             validate: {
               enabled: ${{ inputs.validate }},
