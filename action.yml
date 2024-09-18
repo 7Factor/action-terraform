@@ -19,7 +19,8 @@ inputs:
     description: The Terraform workspace to use
     required: false
   workspace-select:
-    description: Whether to run terraform workspace select. Requires workspace input and no TF_WORKSPACE env var.
+    description: |
+      Whether to run terraform workspace select. Requires workspace input and the TF_WORKSPACE env var to not be set.
     required: false
     default: 'true'
   workspace-create-if-missing:
