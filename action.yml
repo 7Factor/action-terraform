@@ -18,6 +18,14 @@ inputs:
   workspace:
     description: The Terraform workspace to use
     required: false
+  workspace-select:
+    description: Whether to run terraform workspace select. Requires workspace input and no TF_WORKSPACE env var.
+    required: false
+    default: 'true'
+  workspace-create-if-missing:
+    description: Whether to create the workspace if it does not exist. Requires workspace-select input to be true.
+    required: false
+    default: 'true'
   init:
     description: Whether to run terraform init
     required: false
@@ -28,14 +36,6 @@ inputs:
   tfbackend-content:
     description: The content of the backend file to use.
     required: false
-  workspace-select:
-    description: Whether to run terraform workspace select. Requires workspace input and no TF_WORKSPACE env var.
-    required: false
-    default: 'true'
-  workspace-create-if-missing:
-    description: Whether to create the workspace if it does not exist. Requires workspace-select input to be true.
-    required: false
-    default: 'true'
   fmt:
     description: Whether to run terraform fmt
     required: false
