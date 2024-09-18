@@ -194,13 +194,13 @@ runs:
               stderr: `${process.env.validateStderr}`
             },
             test: {
-              enabled: ${{ inputs.test }},
+              enabled: ${{ inputs.action == 'test' }},
               outcome: "${{ steps.test.outcome }}",
               stdout: `${process.env.testStdout}`,
               stderr: `${process.env.testStderr}`
             },
             plan: {
-              enabled: ${{ inputs.plan }},
+              enabled: ${{ inputs.action == 'plan' }},
               outcome: "${{ steps.plan.outcome }}",
               stdout: `${process.env.planStdout}`,
               stderr: `${process.env.planStderr}`
