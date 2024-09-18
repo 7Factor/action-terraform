@@ -15,6 +15,9 @@ inputs:
     description: The directory containing the Terraform configuration
     required: false
     default: .
+  workspace:
+    description: The Terraform workspace to use
+    required: false
   init:
     description: Whether to run terraform init
     required: false
@@ -102,10 +105,10 @@ runs:
 
     - name: ${{ inputs.tf-cli }} workspace select -or-create
       id: workspace
-      if: env.TF_WORKSPACE
+      if: inputs.workspace && !env.TF_WORKSPACE
       working-directory: ${{ inputs.directory }}
       shell: bash
-      run: ${{ inputs.tf-cli }} workspace select -or-create ${{ env.TF_WORKSPACE }}
+      run: ${{ inputs.tf-cli }} workspace select -or-create ${{ inputs.workspace }}
 
     - name: ${{ inputs.tf-cli }} init
       id: init
