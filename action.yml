@@ -119,7 +119,9 @@ runs:
       if: inputs.workspace && !env.TF_WORKSPACE
       working-directory: ${{ inputs.directory }}
       shell: bash
-      run: ${{ inputs.tf-cli }} workspace select -or-create ${{ inputs.workspace }}
+      run: |
+        ${{ inputs.tf-cli }} workspace select -or-create ${{ inputs.workspace }} \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
     - name: ${{ inputs.tf-cli }} validate
       id: validate
