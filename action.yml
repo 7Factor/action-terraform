@@ -103,13 +103,6 @@ runs:
         ${{ inputs.tf-cli }} fmt -check -diff \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
-    - name: ${{ inputs.tf-cli }} workspace select -or-create
-      id: workspace
-      if: inputs.workspace && !env.TF_WORKSPACE
-      working-directory: ${{ inputs.directory }}
-      shell: bash
-      run: ${{ inputs.tf-cli }} workspace select -or-create ${{ inputs.workspace }}
-
     - name: ${{ inputs.tf-cli }} init
       id: init
       if: fromJSON(inputs.init)
@@ -120,6 +113,13 @@ runs:
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
+
+    - name: ${{ inputs.tf-cli }} workspace select -or-create
+      id: workspace
+      if: inputs.workspace && !env.TF_WORKSPACE
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: ${{ inputs.tf-cli }} workspace select -or-create ${{ inputs.workspace }}
 
     - name: ${{ inputs.tf-cli }} validate
       id: validate
