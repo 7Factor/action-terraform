@@ -173,6 +173,8 @@ runs:
         fmtStderr: ${{ steps.fmt.outputs.stderr }}
         initStdout: ${{ steps.init.outputs.stdout }}
         initStderr: ${{ steps.init.outputs.stderr }}
+        workspaceStdout: ${{ steps.workspace.outputs.stdout }}
+        workspaceStderr: ${{ steps.workspace.outputs.stderr }}
         validateStdout: ${{ steps.validate.outputs.stdout }}
         validateStderr: ${{ steps.validate.outputs.stderr }}
         testStdout: ${{ steps.test.outputs.stdout }}
@@ -196,6 +198,12 @@ runs:
               outcome: "${{ steps.init.outcome }}",
               stdout: `${process.env.initStdout}`,
               stderr: `${process.env.initStderr}`
+            },
+            workspace: {
+              enabled: ${{ !!inputs.workspace && !env.TF_WORKSPACE }},
+              outcome: "${{ steps.workspace.outcome }}",
+              stdout: `${process.env.workspaceStdout}`,
+              stderr: `${process.env.workspaceStderr}`
             },
             validate: {
               enabled: ${{ inputs.validate }},
