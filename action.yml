@@ -95,14 +95,14 @@ runs:
   using: composite
   steps:
     - name: Download Plan
-      if: inputs.plan-file-name && !inputs.encrypted-plan-password
+      if: inputs.action == 'apply' && inputs.plan-file-name && !inputs.encrypted-plan-password
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.plan-file-name }}
         path: ${{ inputs.directory }}
 
     - name: Download Encrypted Plan
-      if: inputs.plan-file-name && inputs.encrypted-plan-password
+      if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
       uses: AlexGidarakos/download-encrypted-artifact@v1.0.2
       with:
         remote-name: ${{ inputs.plan-file-name }}
@@ -199,14 +199,14 @@ runs:
           ${{ inputs.plan-file-name }}
 
     - name: Upload Plan
-      if: inputs.plan-file-name && !inputs.encrypted-plan-password
+      if: inputs.action == 'plan' && inputs.plan-file-name && !inputs.encrypted-plan-password
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.plan-file-name }}
         path: ${{ inputs.directory }}/${{ inputs.plan-file-name }}
 
     - name: Upload Encrypted Plan
-      if: inputs.plan-file-name && inputs.encrypted-plan-password
+      if: inputs.action == 'plan' && inputs.plan-file-name && inputs.encrypted-plan-password
       uses: AlexGidarakos/upload-encrypted-artifact@v1.0.3
       with:
         remote-name: ${{ inputs.plan-file-name }}
