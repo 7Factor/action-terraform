@@ -75,6 +75,13 @@ inputs:
   encrypted-plan-password:
     description: The password to use to encrypt the plan artifact. If not provided, the plan will not be encrypted.
     required: false
+  plan-retention-days:
+    description: >
+      Duration after which the plan artifact will expire in days.
+      0 means using the default value defined in the repository settings.
+      Actual values can range from 1 to 90 (public repositories) or 400 (private repositories).
+    required: false
+    default: '0'
   comment:
     description: Whether to comment on the PR with the results
     required: false
@@ -94,21 +101,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Download Plan
-      if: inputs.action == 'apply' && inputs.plan-file-name && !inputs.encrypted-plan-password
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ inputs.plan-file-name }}
-        path: ${{ inputs.directory }}
-
-    - name: Download Encrypted Plan
-      if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
-      uses: AlexGidarakos/download-encrypted-artifact@v1.0.2
-      with:
-        remote-name: ${{ inputs.plan-file-name }}
-        password: ${{ inputs.encrypted-plan-password }}
-        destination: ${{ inputs.directory }}
-
     - name: Create tfbackend file
       if: inputs.tfbackend-content != ''
       shell: bash
@@ -186,6 +178,49 @@ runs:
           ${{ inputs.plan-file-name && format('-out={0}', inputs.plan-file-name) || '' }} \
           ${{ inputs.action-args }}
 
+    - name: Encrypt Plan
+      if: inputs.action == 'plan' && inputs.plan-file-name && inputs.encrypted-plan-password
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: |
+        echo "Compressing and encrypting plan file"
+        tar cf - ${{ inputs.plan-file-name }} \
+          | 7z a -si -t7z -mx=3 -mhe=on -p"${{ inputs.encrypted-plan-password }}" artifact.tar.7z
+
+    - name: Upload Plan
+      if: inputs.action == 'plan' && inputs.plan-file-name
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.plan-file-name }}
+        path: ${{ inputs.directory }}/${{ inputs.encrypted-plan-password && 'artifact.tar.7z' || inputs.plan-file-name }}
+        if-no-files-found: error
+        compression-level: ${{ inputs.encrypted-plan-password && '0' || '3' }}
+        retention-days: ${{ inputs.plan-retention-days }}
+        overwrite: true
+
+    - name: Create Temporary Directory for Encrypted Plan
+      if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
+      shell: bash
+      run: |
+        echo "Creating temporary destination directory for encrypted plan"
+        temp_dir=$(mktemp -d /tmp/XXXXXXXXX)
+        echo "temp_dir=$temp_dir" >> "$GITHUB_ENV"
+
+    - name: Download Plan
+      if: inputs.action == 'apply' && inputs.plan-file-name
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.plan-file-name }}
+        path: ${{ inputs.encryped-plan-password && env.temp_dir || inputs.directory }}
+
+    - name: Decrypt Plan
+      if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
+      shell: bash
+      run: |
+        echo "Decrypting and extracting plan file"
+        7z x -so "${{ env.temp_dir }}/$(ls ${{ env.temp_dir }}/)" -p"${{ inputs.encrypted-plan-password }}" \
+          | tar xf - -C "${{ inputs.directory }}"
+
     - name: ${{ inputs.tf-cli }} apply
       id: apply
       if: inputs.action == 'apply' && github.event_name != 'pull_request'
@@ -197,21 +232,6 @@ runs:
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.action-args }} \
           ${{ inputs.plan-file-name }}
-
-    - name: Upload Plan
-      if: inputs.action == 'plan' && inputs.plan-file-name && !inputs.encrypted-plan-password
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ inputs.plan-file-name }}
-        path: ${{ inputs.directory }}/${{ inputs.plan-file-name }}
-
-    - name: Upload Encrypted Plan
-      if: inputs.action == 'plan' && inputs.plan-file-name && inputs.encrypted-plan-password
-      uses: AlexGidarakos/upload-encrypted-artifact@v1.0.3
-      with:
-        remote-name: ${{ inputs.plan-file-name }}
-        source: ${{ inputs.directory }}/${{ inputs.plan-file-name }}
-        password: ${{ inputs.encrypted-plan-password }}
         
     - name: Build PR Comment
       id: comment
