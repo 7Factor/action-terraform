@@ -211,14 +211,14 @@ runs:
       shell: bash
       run: |
         echo "temp_dir=${{ env.temp_dir }}"
-        echo "${{ inputs.encryped-plan-password && env.temp_dir }}"
+        echo "${{ !!inputs.encryped-plan-password && env.temp_dir }}"
 
     - name: Download Plan
       if: inputs.action == 'apply' && inputs.plan-file-name
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.plan-file-name }}
-        path: ${{ inputs.encryped-plan-password && env.temp_dir || inputs.directory }}
+        path: ${{ !!inputs.encryped-plan-password && env.temp_dir || inputs.directory }}
 
     - name: Decrypt Plan
       if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
