@@ -185,7 +185,7 @@ runs:
       run: |
         echo "Compressing and encrypting plan file"
         tar cf - ${{ inputs.plan-file-name }} \
-          | 7z a -si -t7z -mx=3 -mhe=on -p"${{ inputs.encrypted-plan-password }}" artifact.tar.7z
+          | 7z a -si -t7z -mx=0 -mhe=on -p"${{ inputs.encrypted-plan-password }}" artifact.tar.7z
 
     - name: Upload Plan
       if: inputs.action == 'plan' && inputs.plan-file-name
@@ -194,7 +194,7 @@ runs:
         name: ${{ inputs.plan-file-name }}
         path: ${{ inputs.directory }}/${{ inputs.encrypted-plan-password && 'artifact.tar.7z' || inputs.plan-file-name }}
         if-no-files-found: error
-        compression-level: ${{ inputs.encrypted-plan-password && '0' || '3' }}
+        compression-level: 0
         retention-days: ${{ inputs.plan-retention-days }}
         overwrite: true
 
