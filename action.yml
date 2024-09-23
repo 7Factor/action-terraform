@@ -69,6 +69,19 @@ inputs:
   tfvars-json-content:
     description: The content of the variable file to use in JSON format.
     required: false
+  plan-file-name:
+    description: The name to the plan file to use. If not provided, a plan file will not be used.
+    required: false
+  encrypted-plan-password:
+    description: The password to use to encrypt the plan artifact. If not provided, the plan will not be encrypted.
+    required: false
+  plan-retention-days:
+    description: >
+      Duration after which the plan artifact will expire in days.
+      0 means using the default value defined in the repository settings.
+      Actual values can range from 1 to 90 (public repositories) or 400 (private repositories).
+    required: false
+    default: '0'
   comment:
     description: Whether to comment on the PR with the results
     required: false
@@ -162,7 +175,51 @@ runs:
         ${{ inputs.tf-cli }} plan -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
+          ${{ inputs.plan-file-name && format('-out={0}', inputs.plan-file-name) || '' }} \
           ${{ inputs.action-args }}
+
+    - name: Encrypt Plan
+      if: inputs.action == 'plan' && inputs.plan-file-name && inputs.encrypted-plan-password
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: |
+        echo "Compressing and encrypting plan file"
+        tar cf - ${{ inputs.plan-file-name }} \
+          | 7z a -si -t7z -mx=0 -mhe=on -p"${{ inputs.encrypted-plan-password }}" artifact.tar.7z
+
+    - name: Upload Plan
+      if: inputs.action == 'plan' && inputs.plan-file-name
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.plan-file-name }}
+        path: ${{ inputs.directory }}/${{ inputs.encrypted-plan-password && 'artifact.tar.7z' || inputs.plan-file-name }}
+        if-no-files-found: error
+        compression-level: 0
+        retention-days: ${{ inputs.plan-retention-days }}
+        overwrite: true
+
+    - name: Create Temporary Directory for Encrypted Plan
+      if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
+      shell: bash
+      run: |
+        echo "Creating temporary destination directory for encrypted plan"
+        temp_dir=$(mktemp -d /tmp/XXXXXXXXX)
+        echo "temp_dir=$temp_dir" >> "$GITHUB_ENV"
+
+    - name: Download Plan
+      if: inputs.action == 'apply' && inputs.plan-file-name
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.plan-file-name }}
+        path: ${{ env.temp_dir || inputs.directory }}
+
+    - name: Decrypt Plan
+      if: inputs.action == 'apply' && inputs.plan-file-name && inputs.encrypted-plan-password
+      shell: bash
+      run: |
+        echo "Decrypting and extracting plan file"
+        7z x -so "${{ env.temp_dir }}/artifact.tar.7z" -p"${{ inputs.encrypted-plan-password }}" \
+          | tar xf - -C "${{ inputs.directory }}"
 
     - name: ${{ inputs.tf-cli }} apply
       id: apply
@@ -173,7 +230,8 @@ runs:
         ${{ inputs.tf-cli }} apply -input=false -auto-approve \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
-          ${{ inputs.action-args }}
+          ${{ inputs.action-args }} \
+          ${{ inputs.plan-file-name }}
         
     - name: Build PR Comment
       id: comment
