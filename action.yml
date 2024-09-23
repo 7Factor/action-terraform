@@ -206,6 +206,13 @@ runs:
         temp_dir=$(mktemp -d /tmp/XXXXXXXXX)
         echo "temp_dir=$temp_dir" >> "$GITHUB_ENV"
 
+    - name: Echo the env var
+      if: inputs.action == 'apply' && inputs.plan-file-name
+      shell: bash
+      run: |
+        echo "temp_dir=${{ env.temp_dir }}"
+        echo "${{ inputs.encryped-plan-password && env.temp_dir }}"
+
     - name: Download Plan
       if: inputs.action == 'apply' && inputs.plan-file-name
       uses: actions/download-artifact@v4
