@@ -69,6 +69,12 @@ inputs:
   tfvars-json-content:
     description: The content of the variable file to use in JSON format.
     required: false
+  plan-file-name:
+    description: The name to the plan file to use. If not provided, a plan file will not be used.
+    required: false
+  encrypted-plan-password:
+    description: The password to use to encrypt the plan artifact. If not provided, the plan will not be encrypted.
+    required: false
   comment:
     description: Whether to comment on the PR with the results
     required: false
@@ -88,6 +94,21 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Download Plan
+      if: inputs.plan-file-name && !inputs.encrypted-plan-password
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.plan-file-name }}
+        path: ${{ inputs.directory }}
+
+    - name: Download Encrypted Plan
+      if: inputs.plan-file-name && inputs.encrypted-plan-password
+      uses: AlexGidarakos/download-encrypted-artifact@v1.0.2
+      with:
+        remote-name: ${{ inputs.plan-file-name }}
+        password: ${{ inputs.encrypted-plan-password }}
+        destination: ${{ inputs.directory }}
+
     - name: Create tfbackend file
       if: inputs.tfbackend-content != ''
       shell: bash
@@ -162,6 +183,7 @@ runs:
         ${{ inputs.tf-cli }} plan -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
+          ${{ inputs.plan-file-name && format('-out={0}', inputs.plan-file-name) || '' }} \
           ${{ inputs.action-args }}
 
     - name: ${{ inputs.tf-cli }} apply
@@ -173,7 +195,23 @@ runs:
         ${{ inputs.tf-cli }} apply -input=false -auto-approve \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
-          ${{ inputs.action-args }}
+          ${{ inputs.action-args }} \
+          ${{ inputs.plan-file-name }}
+
+    - name: Upload Plan
+      if: inputs.plan-file-name && !inputs.encrypted-plan-password
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.plan-file-name }}
+        path: ${{ inputs.directory }}/${{ inputs.plan-file-name }}
+
+    - name: Upload Encrypted Plan
+      if: inputs.plan-file-name && inputs.encrypted-plan-password
+      uses: AlexGidarakos/upload-encrypted-artifact@v1.0.3
+      with:
+        remote-name: ${{ inputs.plan-file-name }}
+        source: ${{ inputs.directory }}/${{ inputs.plan-file-name }}
+        password: ${{ inputs.encrypted-plan-password }}
         
     - name: Build PR Comment
       id: comment
