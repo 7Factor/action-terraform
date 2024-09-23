@@ -221,6 +221,8 @@ runs:
         ls -l "${{ env.temp_dir }}"
         7z x -so "${{ env.temp_dir }}/artifact.tar.7z" -p"${{ inputs.encrypted-plan-password }}" \
           | tar xf - -C "${{ inputs.directory }}"
+        ls -l "${{ inputs.directory }}"
+        cat "${{ inputs.directory }}/${{ inputs.plan-file-name }}"
 
     - name: ${{ inputs.tf-cli }} apply
       id: apply
