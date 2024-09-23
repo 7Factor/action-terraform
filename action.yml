@@ -218,6 +218,7 @@ runs:
       shell: bash
       run: |
         echo "Decrypting and extracting plan file"
+        ls -l "${{ env.temp_dir }}"
         7z x -so "${{ env.temp_dir }}/artifact.tar.7z" -p"${{ inputs.encrypted-plan-password }}" \
           | tar xf - -C "${{ inputs.directory }}"
 
