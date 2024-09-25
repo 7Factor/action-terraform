@@ -223,7 +223,7 @@ runs:
 
     - name: ${{ inputs.tf-cli }} apply
       id: apply
-      if: inputs.action == 'apply' && github.event_name != 'pull_request'
+      if: inputs.action == 'apply'
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
