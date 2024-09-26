@@ -94,6 +94,69 @@ inputs:
     required: false
 
 outputs:
+  fmt-outcome:
+    description: The outcome of the terraform fmt command
+    value: ${{ steps.fmt.outputs.outcome }}
+  fmt-stdout:
+    description: The stdout of the terraform fmt command
+    value: ${{ steps.fmt.outputs.stdout }}
+  fmt-stderr:
+    description: The stderr of the terraform fmt command
+    value: ${{ steps.fmt.outputs.stderr }}
+  init-outcome:
+    description: The outcome of the terraform init command
+    value: ${{ steps.init.outputs.outcome }}
+  init-stdout:
+    description: The stdout of the terraform init command
+    value: ${{ steps.init.outputs.stdout }}
+  init-stderr:
+    description: The stderr of the terraform init command
+    value: ${{ steps.init.outputs.stderr }}
+  workspace-outcome:
+    description: The outcome of the terraform workspace select command
+    value: ${{ steps.workspace.outputs.outcome }}
+  workspace-stdout:
+    description: The stdout of the terraform workspace select command
+    value: ${{ steps.workspace.outputs.stdout }}
+  workspace-stderr:
+    description: The stderr of the terraform workspace select command
+    value: ${{ steps.workspace.outputs.stderr }}
+  validate-outcome:
+    description: The outcome of the terraform validate command
+    value: ${{ steps.validate.outputs.outcome }}
+  validate-stdout:
+    description: The stdout of the terraform validate command
+    value: ${{ steps.validate.outputs.stdout }}
+  validate-stderr:
+    description: The stderr of the terraform validate command
+    value: ${{ steps.validate.outputs.stderr }}
+  test-outcome:
+    description: The outcome of the terraform test command
+    value: ${{ steps.test.outputs.outcome }}
+  test-stdout:
+    description: The stdout of the terraform test command
+    value: ${{ steps.test.outputs.stdout }}
+  test-stderr:
+    description: The stderr of the terraform test command
+    value: ${{ steps.test.outputs.stderr }}
+  plan-outcome:
+    description: The outcome of the terraform plan command
+    value: ${{ steps.plan.outputs.outcome }}
+  plan-stdout:
+    description: The stdout of the terraform plan command
+    value: ${{ steps.plan.outputs.stdout }}
+  plan-stderr:
+    description: The stderr of the terraform plan command
+    value: ${{ steps.plan.outputs.stderr }}
+  apply-outcome:
+    description: The outcome of the terraform apply command
+    value: ${{ steps.apply.outputs.outcome }}
+  apply-stdout:
+    description: The stdout of the terraform apply command
+    value: ${{ steps.apply.outputs.stdout }}
+  apply-stderr:
+    description: The stderr of the terraform apply command
+    value: ${{ steps.apply.outputs.stderr }}
   output:
     description: The output of the terraform output command
     value: ${{ steps.output.outputs.output }}
