@@ -170,13 +170,16 @@ runs:
       run: echo '${{ inputs.tfbackend-content }}' > ${{ github.action_path }}/action.tfbackend
 
     - name: Create tfvars variable files
+      env:
+        tfvarsContent: ${{ inputs.tfvars-content }}
+        tfvarsJsonContent: ${{ inputs.tfvars-json-content }}
       shell: bash
       run: |
-        if [ -n "${{ inputs.tfvars-content }}" ]; then
-          echo '${{ inputs.tfvars-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars
+        if [ -n "$tfvarsContent" ]; then
+          echo "$tfvarsContent" > ${{ inputs.directory }}/action-variables.auto.tfvars
         fi
-        if [ -n "${{ inputs.tfvars-json-content }}" ]; then
-          echo '${{ inputs.tfvars-json-content }}' > ${{ inputs.directory }}/action-variables.auto.tfvars.json
+        if [ -n "$tfvarsJsonContent" ]; then
+          echo "$tfvarsJsonContent" > ${{ inputs.directory }}/action-variables.auto.tfvars.json
         fi
 
     - name: ${{ inputs.tf-cli }} fmt
