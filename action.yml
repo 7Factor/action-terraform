@@ -382,4 +382,8 @@ runs:
           ${{ inputs.output-args }} \
           > ${{ github.action_path }}/output
         set -e
-        echo "output=$(cat ${{ github.action_path }}/output)" >> "$GITHUB_OUTPUT"
+        {
+          echo 'output<<EOFFOEEOFFOE'
+          cat ${{ github.action_path }}/output
+          echo EOFFOEEOFFOE
+        } >> "$GITHUB_OUTPUT"
