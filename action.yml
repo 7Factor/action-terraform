@@ -404,10 +404,6 @@ runs:
       shell: bash
       run: |
         ${{ inputs.tf-cli }} output -no-color -json \
-          > ${{ github.action_path }}/metada
+          > ${{ github.action_path }}/metadata
         set -e
-        {
-          echo 'metadata<<EOFFOEEOFFOE'
-          cat ${{ github.action_path }}/metada | jq '.[] = .[].value'
-          echo EOFFOEEOFFOE
-        } >> "$GITHUB_OUTPUT"
+        echo metadata=$(cat ${{ github.action_path }}/metadata | jq -c '.[] = .[].value') >> "$GITHUB_OUTPUT"
