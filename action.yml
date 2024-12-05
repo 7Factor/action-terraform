@@ -46,23 +46,28 @@ inputs:
     required: false
     default: 'true'
   action:
-    description: The main terraform action to run ("plan", "apply", or "test")
+    description: The main terraform action to run ("plan", "apply", "test", or "output")
     required: false
   action-args:
-    description: Additional arguments to pass to terraform plan, apply, or test
+    description: Additional arguments to pass to terraform plan, apply, test, or output
     required: false
   destroy:
     description: Whether to destroy the infrastructure
     required: false
     default: 'false'
   output:
-    description: Whether to run terraform output
+    description: Whether to run terraform output separate from the main action (for logging purposes)
     required: false
     default: 'false'
   output-args:
-    description: Additional arguments to pass to terraform output
+    description: Additional arguments to pass to terraform output (for the output input)
     required: false
-    default: -json
+  metadata:
+    description: >
+      Whether to run terraform output in JSON format and produce a flattened "metadata" output that can be used as json
+      tfvars.
+    required: false
+    default: 'false'
   tfvars-content:
     description: The content of the variable file to use.
     required: false
@@ -157,9 +162,19 @@ outputs:
   apply-stderr:
     description: The stderr of the terraform apply command
     value: ${{ steps.apply.outputs.stderr }}
-  output:
-    description: The output of the terraform output command
-    value: ${{ steps.output.outputs.output }}
+  output-outcome:
+    description: The outcome of the terraform output command
+    value: ${{ steps.output.outputs.outcome }}
+  output-stdout:
+    description: The stdout of the terraform output command
+    value: ${{ steps.output.outputs.stdout }}
+  output-stderr:
+    description: The stderr of the terraform output command
+    value: ${{ steps.output.outputs.stderr }}
+  metadata:
+    description: >
+      The metadata (output vars in JSON format) from the terraform state
+    value: ${{ steps.metadata.outputs.metadata }}
 
 runs:
   using: composite
@@ -298,7 +313,17 @@ runs:
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.action-args }} \
           ${{ inputs.plan-file-name }}
-        
+
+    - name: ${{ inputs.tf-cli }} output
+      id: output
+      if: inputs.action == 'output'
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} output \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.action-args }}
+
     - name: Build PR Comment
       id: comment
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
@@ -318,6 +343,8 @@ runs:
         testStderr: ${{ steps.test.outputs.stderr }}
         planStdout: ${{ steps.plan.outputs.stdout }}
         planStderr: ${{ steps.plan.outputs.stderr }}
+        outputStdout: ${{ steps.output.outputs.stdout }}
+        outputStderr: ${{ steps.output.outputs.stderr }}
       with:
         github-token: ${{ inputs.github-token }}
         result-encoding: string
@@ -360,6 +387,12 @@ runs:
               stdout: `${process.env.planStdout}`,
               stderr: `${process.env.planStderr}`
             }
+            output: {
+              enabled: ${{ inputs.action == 'output' }},
+              outcome: "${{ steps.output.outcome }}",
+              stdout: `${process.env.outputStdout}`,
+              stderr: `${process.env.outputStderr}`
+            }
           }
           const terraformComment = require('${{ github.action_path }}/terraform_comment.js')
           return terraformComment(context, content)
@@ -373,13 +406,20 @@ runs:
         comment-body: ${{ steps.comment.outputs.result }}
 
     - name: ${{ inputs.tf-cli }} output
-      id: output
       if: fromJSON(inputs.output)
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
-        ${{ inputs.tf-cli }} output -no-color \
-          ${{ inputs.output-args }} \
+        ${{ inputs.tf-cli }} output \
+          ${{ inputs.output-args }}
+
+    - name: ${{ inputs.tf-cli }} output
+      id: metadata
+      if: fromJSON(inputs.metadata)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} output -no-color -json \
           > ${{ github.action_path }}/output
         set -e
-        echo "output=$(cat ${{ github.action_path }}/output)" >> "$GITHUB_OUTPUT"
+        echo "metadata=$(cat ${{ github.action_path }}/output | jq -c '.[] = .[].value')" >> "$GITHUB_OUTPUT"
