@@ -63,6 +63,12 @@ inputs:
     description: Additional arguments to pass to terraform output
     required: false
     default: -json
+  metadata:
+    description: >
+      Whether to run terraform output in JSON format and produce a flattened "metadata" output that can be used as json
+      tfvars.
+    required: false
+    default: 'false'
   tfvars-content:
     description: The content of the variable file to use.
     required: false
@@ -160,6 +166,9 @@ outputs:
   output:
     description: The output of the terraform output command
     value: ${{ steps.output.outputs.output }}
+  metadata:
+    description: The metadata of the terraform output command
+    value: ${{ steps.metadata.outputs.metadata }}
 
 runs:
   using: composite
@@ -385,5 +394,20 @@ runs:
         {
           echo 'output<<EOFFOEEOFFOE'
           cat ${{ github.action_path }}/output
+          echo EOFFOEEOFFOE
+        } >> "$GITHUB_OUTPUT"
+
+    - name: ${{ inputs.tf-cli }} output
+      id: metadata
+      if: fromJSON(inputs.metadata)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} output -no-color -json \
+          > ${{ github.action_path }}/metada
+        set -e
+        {
+          echo 'metadata<<EOFFOEEOFFOE'
+          cat ${{ github.action_path }}/metada | jq '.[] = .[].value'
           echo EOFFOEEOFFOE
         } >> "$GITHUB_OUTPUT"
