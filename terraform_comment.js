@@ -131,7 +131,28 @@ ${outcome !== 'skipped' ? createPlanDetails(stdout, stderr) : ''}
     ` : '';
 };
 
-const createCommentBody = ({actor, eventName, workflow}, {header, fmt, init, workspace, validate, test, plan}) => {
+const createOutputDetails = (stdout, stderr) => {
+    return `
+
+<details><summary>Show Output</summary>
+
+\`\`\`hcl\n
+${stdout}${stderr ? `\n${stderr}` : ''}
+\`\`\`
+
+</details>
+    `;
+};
+
+const createOutputOutput = ({enabled, stdout, stderr}) => {
+    return enabled ? `
+
+#### Terraform Output 📖
+${createOutputDetails(stdout, stderr)}
+    ` : '';
+};
+
+const createCommentBody = ({actor, eventName, workflow}, {header, fmt, init, workspace, validate, test, plan, output}) => {
     return `
 ${createHeader(header)}
 ${createFmtOutput(fmt)}
@@ -140,6 +161,7 @@ ${createWorkspaceOutput(workspace)}
 ${createValidateOutput(validate)}
 ${createTestOutput(test)}
 ${createPlanOutput(plan)}
+${createOutputOutput(output)}
 
 *Pusher: @${actor}, Action: \`${eventName}\`, Workflow: \`${workflow}\`*
     `;

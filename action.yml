@@ -46,21 +46,21 @@ inputs:
     required: false
     default: 'true'
   action:
-    description: The main terraform action to run ("plan", "apply", or "test")
+    description: The main terraform action to run ("plan", "apply", "test", or "output")
     required: false
   action-args:
-    description: Additional arguments to pass to terraform plan, apply, or test
+    description: Additional arguments to pass to terraform plan, apply, test, or output
     required: false
   destroy:
     description: Whether to destroy the infrastructure
     required: false
     default: 'false'
   output:
-    description: Whether to run terraform output
+    description: Whether to run terraform output separate from the main action (for logging purposes)
     required: false
     default: 'false'
   output-args:
-    description: Additional arguments to pass to terraform output
+    description: Additional arguments to pass to terraform output (for the output input)
     required: false
   metadata:
     description: >
@@ -313,7 +313,17 @@ runs:
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.action-args }} \
           ${{ inputs.plan-file-name }}
-        
+
+    - name: ${{ inputs.tf-cli }} output
+      id: output
+      if: inputs.action == 'output'
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} output \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
+          ${{ inputs.action-args }}
+
     - name: Build PR Comment
       id: comment
       if: always() && fromJSON(inputs.comment) && github.event_name == 'pull_request'
@@ -333,6 +343,8 @@ runs:
         testStderr: ${{ steps.test.outputs.stderr }}
         planStdout: ${{ steps.plan.outputs.stdout }}
         planStderr: ${{ steps.plan.outputs.stderr }}
+        outputStdout: ${{ steps.output.outputs.stdout }}
+        outputStderr: ${{ steps.output.outputs.stderr }}
       with:
         github-token: ${{ inputs.github-token }}
         result-encoding: string
@@ -375,6 +387,12 @@ runs:
               stdout: `${process.env.planStdout}`,
               stderr: `${process.env.planStderr}`
             }
+            output: {
+              enabled: ${{ inputs.action == 'output' }},
+              outcome: "${{ steps.output.outcome }}",
+              stdout: `${process.env.outputStdout}`,
+              stderr: `${process.env.outputStderr}`
+            }
           }
           const terraformComment = require('${{ github.action_path }}/terraform_comment.js')
           return terraformComment(context, content)
@@ -388,7 +406,6 @@ runs:
         comment-body: ${{ steps.comment.outputs.result }}
 
     - name: ${{ inputs.tf-cli }} output
-      id: output
       if: fromJSON(inputs.output)
       working-directory: ${{ inputs.directory }}
       shell: bash
