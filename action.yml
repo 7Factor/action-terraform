@@ -62,7 +62,6 @@ inputs:
   output-args:
     description: Additional arguments to pass to terraform output
     required: false
-    default: -json
   metadata:
     description: >
       Whether to run terraform output in JSON format and produce a flattened "metadata" output that can be used as json
@@ -163,11 +162,18 @@ outputs:
   apply-stderr:
     description: The stderr of the terraform apply command
     value: ${{ steps.apply.outputs.stderr }}
-  output:
-    description: The output of the terraform output command
-    value: ${{ steps.output.outputs.output }}
+  output-outcome:
+    description: The outcome of the terraform output command
+    value: ${{ steps.output.outputs.outcome }}
+  output-stdout:
+    description: The stdout of the terraform output command
+    value: ${{ steps.output.outputs.stdout }}
+  output-stderr:
+    description: The stderr of the terraform output command
+    value: ${{ steps.output.outputs.stderr }}
   metadata:
-    description: The metadata of the terraform output command
+    description: >
+      The metadata (output vars in JSON format) from the terraform state
     value: ${{ steps.metadata.outputs.metadata }}
 
 runs:
@@ -387,15 +393,8 @@ runs:
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
-        ${{ inputs.tf-cli }} output -no-color \
-          ${{ inputs.output-args }} \
-          > ${{ github.action_path }}/output
-        set -e
-        {
-          echo 'output<<EOFFOEEOFFOE'
-          cat ${{ github.action_path }}/output
-          echo EOFFOEEOFFOE
-        } >> "$GITHUB_OUTPUT"
+        ${{ inputs.tf-cli }} output \
+          ${{ inputs.output-args }}
 
     - name: ${{ inputs.tf-cli }} output
       id: metadata
@@ -404,6 +403,6 @@ runs:
       shell: bash
       run: |
         ${{ inputs.tf-cli }} output -no-color -json \
-          > ${{ github.action_path }}/metadata
+          > ${{ github.action_path }}/output
         set -e
-        echo metadata=$(cat ${{ github.action_path }}/metadata | jq -c '.[] = .[].value') >> "$GITHUB_OUTPUT"
+        echo metadata=$(cat ${{ github.action_path }}/output | jq -c '.[] = .[].value') >> "$GITHUB_OUTPUT"
