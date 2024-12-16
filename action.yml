@@ -422,4 +422,4 @@ runs:
         ${{ inputs.tf-cli }} output -no-color -json \
           > ${{ github.action_path }}/output
         set -e
-        echo "metadata=$(cat ${{ github.action_path }}/output | jq -c '.[] = .[].value')" >> "$GITHUB_OUTPUT"
+        echo "metadata=$(cat ${{ github.action_path }}/output | jq -c 'with_entries(.value |= .value)')" >> "$GITHUB_OUTPUT"
