@@ -386,7 +386,7 @@ runs:
               outcome: "${{ steps.plan.outcome }}",
               stdout: `${process.env.planStdout}`,
               stderr: `${process.env.planStderr}`
-            }
+            },
             output: {
               enabled: ${{ inputs.action == 'output' }},
               outcome: "${{ steps.output.outcome }}",
