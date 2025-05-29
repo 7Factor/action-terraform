@@ -189,6 +189,15 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: ${{ inputs.tf-cli }} fmt
+      id: fmt
+      if: fromJSON(inputs.fmt)
+      working-directory: ${{ inputs.directory }}
+      shell: bash
+      run: |
+        ${{ inputs.tf-cli }} fmt -check -diff \
+          ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
+
     - name: Copy backend file
       if: ${{ inputs.backend-file }}
       shell: bash
@@ -222,15 +231,6 @@ runs:
         if [ -n "$tfvarsJsonContent" ]; then
           echo "$tfvarsJsonContent" > ${{ inputs.directory }}/action-variables.auto.tfvars.json
         fi
-
-    - name: ${{ inputs.tf-cli }} fmt
-      id: fmt
-      if: fromJSON(inputs.fmt)
-      working-directory: ${{ inputs.directory }}
-      shell: bash
-      run: |
-        ${{ inputs.tf-cli }} fmt -check -diff \
-          ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
 
     - name: ${{ inputs.tf-cli }} init
       id: init
