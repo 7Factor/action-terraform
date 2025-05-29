@@ -448,6 +448,6 @@ runs:
         ${{ inputs.tf-cli }} output -no-color -json \
           > ${{ github.action_path }}/output
         set -e
-        echo "METADATA=$(cat ${{ github.action_path }}/output | jq -c 'with_entries(.value |= .value)')" >> "$GITHUB_ENV"
-        echo ::add-mask::"$METADATA"
-        echo metadata="$METADATA" >> "$GITHUB_OUTPUT"
+        METADATA=$(cat ${{ github.action_path }}/output | jq -c 'with_entries(.value |= .value)')
+        echo "::add-mask::$METADATA"
+        echo "metadata=$METADATA" >> "$GITHUB_OUTPUT"
