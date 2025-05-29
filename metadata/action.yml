@@ -33,6 +33,13 @@ inputs:
       The content of the backend config file to use. For use with partial backend configuration. See
       https://developer.hashicorp.com/terraform/language/backend#partial-configuration
     required: false
+  output:
+    description: Whether to run terraform output separate from the main action (for logging purposes)
+    required: false
+    default: 'true'
+  output-args:
+    description: Additional arguments to pass to terraform output (for the output input)
+    required: false
   metadata-destination:
     description: >
       The destination directory to create a metadata tfvars file. If not provided, a file will not be created.
@@ -57,6 +64,15 @@ outputs:
   workspace-stderr:
     description: The stderr of the terraform workspace select command
     value: ${{ steps.terraform.outputs.workspace-stderr }}
+  output-outcome:
+    description: The outcome of the terraform output command
+    value: ${{ steps.terraform.outputs.output-outcome }}
+  output-stdout:
+    description: The stdout of the terraform output command
+    value: ${{ steps.terraform.outputs.output-stdout }}
+  output-stderr:
+    description: The stderr of the terraform output command
+    value: ${{ steps.terraform.outputs.output-stderr }}
   metadata:
     description: >
       The metadata (output vars in JSON format) from the terraform state
@@ -87,6 +103,8 @@ runs:
         partial-backend: ${{ inputs.partial-backend }}
         backend-config-content: ${{ inputs.backend-config-content }}
         comment: false
+        output: ${{ inputs.output }}
+        output-args: ${{ inputs.output-args }}
         metadata: true
 
     - name: Create output vars file
