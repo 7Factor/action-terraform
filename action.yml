@@ -34,8 +34,10 @@ inputs:
   init-args:
     description: Additional arguments to pass to terraform init
     required: false
-  tfbackend-content:
-    description: The content of the backend file to use.
+  backend-config-contents:
+    description: >
+      The content of the backend config file to use. For use with partial backend configuration. See
+      https://developer.hashicorp.com/terraform/language/backend#partial-configuration
     required: false
   fmt:
     description: Whether to run terraform fmt
@@ -179,10 +181,10 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Create tfbackend file
-      if: inputs.tfbackend-content != ''
+    - name: Create backend config file
+      if: inputs.backend-config-contents != ''
       shell: bash
-      run: echo '${{ inputs.tfbackend-content }}' > ${{ github.action_path }}/action.tfbackend
+      run: echo '${{ inputs.backend-config-contents }}' > ${{ github.action_path }}/action.tfbackend
 
     - name: Create tfvars variable files
       env:
@@ -214,7 +216,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} init -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
+          ${{ inputs.backend-config-contents != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
 
     - name: ${{ inputs.tf-cli }} workspace select
