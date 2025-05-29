@@ -92,7 +92,7 @@ runs:
     - name: Create output vars file
       if: ${{ inputs.metadata-destination != '' }}
       env:
-        TERRAFORM_OUTPUT: ${{ steps.terraform.metadata }}
+        TERRAFORM_OUTPUT: ${{ steps.terraform.outputs.metadata }}
         METADATA_DESTINATION: ${{ inputs.metadata-destination }}/${{ inputs.workspace }}.auto.tfvars.json
       shell: bash
       run: echo "$TERRAFORM_OUTPUT" > "$METADATA_DESTINATION"
