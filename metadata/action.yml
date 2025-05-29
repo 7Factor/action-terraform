@@ -73,7 +73,7 @@ runs:
 
     - name: ${{ inputs.tf-cli }} output
       id: terraform
-      uses: ${{ github.action_path }}/../
+      uses: 7Factor/action-terraform@jwood/v3
       with:
         directory: ${{ env.TMPDIR }}
         tf-cli: ${{ inputs.tf-cli }}
