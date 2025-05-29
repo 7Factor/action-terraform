@@ -34,6 +34,9 @@ inputs:
   init-args:
     description: Additional arguments to pass to terraform init
     required: false
+  backend-file:
+    description: The path to the backend file to use, if not present in the terraform config directory.
+    required: false
   partial-backend:
     description: >
       The backend to use in a partial backend configuration. For example, "s3". See
@@ -186,6 +189,12 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Copy backend file
+      if: ${{ inputs.backend-file }}
+      shell: bash
+      run: |
+        cp ${{ inputs.backend-file }} ${{ inputs.directory }}/backend.tf
+
     - name: Create partial backend file
       if: inputs.partial-backend != ''
       shell: bash
