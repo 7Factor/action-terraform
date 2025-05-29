@@ -34,8 +34,18 @@ inputs:
   init-args:
     description: Additional arguments to pass to terraform init
     required: false
-  tfbackend-content:
-    description: The content of the backend file to use.
+  backend-file:
+    description: The path to the backend file to use, if not present in the terraform config directory.
+    required: false
+  partial-backend:
+    description: >
+      The backend to use in a partial backend configuration. For example, "s3". See
+      https://developer.hashicorp.com/terraform/language/backend#partial-configuration
+    required: false
+  backend-config-content:
+    description: >
+      The content of the backend config file to use. For use with partial backend configuration. See
+      https://developer.hashicorp.com/terraform/language/backend#partial-configuration
     required: false
   fmt:
     description: Whether to run terraform fmt
@@ -179,10 +189,26 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Create tfbackend file
-      if: inputs.tfbackend-content != ''
+    - name: Copy backend file
+      if: ${{ inputs.backend-file }}
       shell: bash
-      run: echo '${{ inputs.tfbackend-content }}' > ${{ github.action_path }}/action.tfbackend
+      run: |
+        cp ${{ inputs.backend-file }} ${{ inputs.directory }}/backend.tf
+
+    - name: Create partial backend file
+      if: inputs.partial-backend != ''
+      shell: bash
+      run: |
+        cat <<'EOF' > ${{ inputs.directory }}/partial-backend.tf
+        terraform {
+          backend "${{ inputs.partial-backend }}" {}
+        }
+        EOF
+
+    - name: Create backend config file
+      if: inputs.backend-config-content != ''
+      shell: bash
+      run: echo '${{ inputs.backend-config-content }}' > ${{ github.action_path }}/action.tfbackend
 
     - name: Create tfvars variable files
       env:
@@ -214,7 +240,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} init -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.tfbackend-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
+          ${{ inputs.backend-config-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
 
     - name: ${{ inputs.tf-cli }} workspace select
@@ -422,4 +448,6 @@ runs:
         ${{ inputs.tf-cli }} output -no-color -json \
           > ${{ github.action_path }}/output
         set -e
-        echo "metadata=$(cat ${{ github.action_path }}/output | jq -c 'with_entries(.value |= .value)')" >> "$GITHUB_OUTPUT"
+        METADATA=$(cat ${{ github.action_path }}/output | jq -c 'with_entries(.value |= .value)')
+        echo "::add-mask::$METADATA"
+        echo "metadata=$METADATA" >> "$GITHUB_OUTPUT"

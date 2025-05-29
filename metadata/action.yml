@@ -1,0 +1,116 @@
+name: Get Terraform metadata
+
+description: >
+  Runs Terraform output command to generate "metadata". Metadata is just the output values formatted into JSON that is
+  compatible for use as input to other Terraform workflows.
+
+inputs:
+  tf-cli:
+    description: The actual Terraform CLI to use.
+    default: terraform
+    required: false
+  workspace:
+    description: The Terraform workspace to use.
+    required: false
+  workspace-select:
+    description: |
+      Whether to run terraform workspace select. Requires workspace input and the TF_WORKSPACE env var to not be set.
+    required: false
+    default: 'true'
+  init-args:
+    description: Additional arguments to pass to terraform init.
+    required: false
+  backend-file:
+    description: The path to the backend file to use.
+    required: false
+  partial-backend:
+    description: >
+      The backend to use in a partial backend configuration. For example, "s3". See
+      https://developer.hashicorp.com/terraform/language/backend#partial-configuration
+    required: false
+  backend-config-content:
+    description: >
+      The content of the backend config file to use. For use with partial backend configuration. See
+      https://developer.hashicorp.com/terraform/language/backend#partial-configuration
+    required: false
+  output:
+    description: Whether to run terraform output separate from the main action (for logging purposes)
+    required: false
+    default: 'true'
+  output-args:
+    description: Additional arguments to pass to terraform output (for the output input)
+    required: false
+  metadata-destination:
+    description: >
+      The destination directory to create a metadata tfvars file. If not provided, a file will not be created.
+    required: false
+
+outputs:
+  init-outcome:
+    description: The outcome of the terraform init command
+    value: ${{ steps.terraform.outputs.init-outcome }}
+  init-stdout:
+    description: The stdout of the terraform init command
+    value: ${{ steps.terraform.outputs.init-stdout }}
+  init-stderr:
+    description: The stderr of the terraform init command
+    value: ${{ steps.terraform.outputs.init-stderr }}
+  workspace-outcome:
+    description: The outcome of the terraform workspace select command
+    value: ${{ steps.terraform.outputs.workspace-outcome }}
+  workspace-stdout:
+    description: The stdout of the terraform workspace select command
+    value: ${{ steps.terraform.outputs.workspace-stdout }}
+  workspace-stderr:
+    description: The stderr of the terraform workspace select command
+    value: ${{ steps.terraform.outputs.workspace-stderr }}
+  output-outcome:
+    description: The outcome of the terraform output command
+    value: ${{ steps.terraform.outputs.output-outcome }}
+  output-stdout:
+    description: The stdout of the terraform output command
+    value: ${{ steps.terraform.outputs.output-stdout }}
+  output-stderr:
+    description: The stderr of the terraform output command
+    value: ${{ steps.terraform.outputs.output-stderr }}
+  metadata:
+    description: >
+      The metadata (output vars in JSON format) from the terraform state
+    value: ${{ steps.terraform.outputs.metadata }}
+
+runs:
+  using: composite
+  steps:
+    - name: Create a temporary directory
+      shell: bash
+      run: |
+        TMPFILE=`mktemp -d ${{ runner.temp }}/tmp.XXXXXXXX`
+        echo "TMPDIR=$TMPFILE" >> $GITHUB_ENV
+
+    - name: ${{ inputs.tf-cli }} output
+      id: terraform
+      uses: 7Factor/action-terraform@v3
+      with:
+        directory: ${{ env.TMPDIR }}
+        tf-cli: ${{ inputs.tf-cli }}
+        workspace: ${{ inputs.workspace }}
+        workspace-select: ${{ inputs.workspace-select }}
+        workspace-create-if-missing: false
+        fmt: false
+        validate: false
+        init-args: ${{ inputs.init-args }}
+        backend-file: ${{ inputs.backend-file }}
+        partial-backend: ${{ inputs.partial-backend }}
+        backend-config-content: ${{ inputs.backend-config-content }}
+        comment: false
+        output: ${{ inputs.output }}
+        output-args: ${{ inputs.output-args }}
+        metadata: true
+
+    - name: Create output vars file
+      if: ${{ inputs.metadata-destination != '' }}
+      env:
+        TERRAFORM_OUTPUT: ${{ steps.terraform.outputs.metadata }}
+        METADATA_DESTINATION: ${{ inputs.metadata-destination }}/${{ inputs.workspace }}.auto.tfvars.json
+      shell: bash
+      run: echo "$TERRAFORM_OUTPUT" > "$METADATA_DESTINATION"
