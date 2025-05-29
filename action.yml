@@ -34,6 +34,11 @@ inputs:
   init-args:
     description: Additional arguments to pass to terraform init
     required: false
+  partial-backend:
+    description: >
+      The backend to use in a partial backend configuration. For example, "s3". See
+      https://developer.hashicorp.com/terraform/language/backend#partial-configuration
+    required: false
   backend-config-contents:
     description: >
       The content of the backend config file to use. For use with partial backend configuration. See
@@ -181,6 +186,16 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Create partial backend file
+      if: inputs.partial-backend != ''
+      shell: bash
+      run: |
+        cat <<'EOF' > ${{ inputs.directory }}/partial-backend.tf
+        terraform {
+          backend "${{ inputs.partial-backend }}" {}
+        }
+        EOF
+
     - name: Create backend config file
       if: inputs.backend-config-contents != ''
       shell: bash
