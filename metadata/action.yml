@@ -89,7 +89,7 @@ runs:
 
     - name: ${{ inputs.tf-cli }} output
       id: terraform
-      uses: 7Factor/action-terraform@jwood/v3
+      uses: 7Factor/action-terraform@v3
       with:
         directory: ${{ env.TMPDIR }}
         tf-cli: ${{ inputs.tf-cli }}
