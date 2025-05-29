@@ -28,7 +28,7 @@ inputs:
       The backend to use in a partial backend configuration. For example, "s3". See
       https://developer.hashicorp.com/terraform/language/backend#partial-configuration
     required: false
-  backend-config-contents:
+  backend-config-content:
     description: >
       The content of the backend config file to use. For use with partial backend configuration. See
       https://developer.hashicorp.com/terraform/language/backend#partial-configuration
@@ -85,7 +85,7 @@ runs:
         init-args: ${{ inputs.init-args }}
         backend-file: ${{ inputs.backend-file }}
         partial-backend: ${{ inputs.partial-backend }}
-        backend-config-contents: ${{ inputs.backend-config-contents }}
+        backend-config-content: ${{ inputs.backend-config-content }}
         comment: false
         metadata: true
 

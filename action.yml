@@ -42,7 +42,7 @@ inputs:
       The backend to use in a partial backend configuration. For example, "s3". See
       https://developer.hashicorp.com/terraform/language/backend#partial-configuration
     required: false
-  backend-config-contents:
+  backend-config-content:
     description: >
       The content of the backend config file to use. For use with partial backend configuration. See
       https://developer.hashicorp.com/terraform/language/backend#partial-configuration
@@ -206,9 +206,9 @@ runs:
         EOF
 
     - name: Create backend config file
-      if: inputs.backend-config-contents != ''
+      if: inputs.backend-config-content != ''
       shell: bash
-      run: echo '${{ inputs.backend-config-contents }}' > ${{ github.action_path }}/action.tfbackend
+      run: echo '${{ inputs.backend-config-content }}' > ${{ github.action_path }}/action.tfbackend
 
     - name: Create tfvars variable files
       env:
@@ -240,7 +240,7 @@ runs:
       run: |
         ${{ inputs.tf-cli }} init -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ inputs.backend-config-contents != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
+          ${{ inputs.backend-config-content != '' && format('-backend-config={0}/action.tfbackend', github.action_path) || '' }} \
           ${{ inputs.init-args }}
 
     - name: ${{ inputs.tf-cli }} workspace select
