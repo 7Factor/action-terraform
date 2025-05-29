@@ -73,7 +73,7 @@ runs:
 
     - name: ${{ inputs.tf-cli }} output
       id: terraform
-      uses: ./
+      uses: ${{ github.action_path }}/../
       with:
         directory: ${{ env.TMPDIR }}
         tf-cli: ${{ inputs.tf-cli }}
