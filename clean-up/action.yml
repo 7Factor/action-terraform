@@ -1,0 +1,29 @@
+name: Clean up Terraform files
+
+description: >
+  Cleans up Terraform workspace files. This can be useful in certain cases when running Terraform multiple times in the
+  same directory may otherwise have unwanted side effects.
+
+inputs:
+  directory:
+    description: The directory containing the Terraform configuration.
+    required: false
+    default: .
+  remove-backend-tf:
+    description: Whether or not to remove the backend.tf file.
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - name: Remove .terraform directory
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: rm -rf .terraform
+
+    - name: Remove backend.tf file
+      if: inputs.remove-backend-tf == 'true'
+      shell: bash
+      working-directory: ${{ inputs.directory }}
+      run: rm backend.tf
