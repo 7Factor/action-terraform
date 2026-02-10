@@ -375,7 +375,7 @@ runs:
         planCommentStderr: ${{ steps.plan.outputs.comment_stderr }}
         planCommentOverflow: ${{ steps.plan.outputs.comment_overflow }}
         planCommentExcerptSource: ${{ steps.plan.outputs.comment_excerpt_source }}
-        workflowRunUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        workflowRunUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ github.job }}
         outputStdout: ${{ steps.output.outputs.stdout }}
         outputStderr: ${{ steps.output.outputs.stderr }}
       with:
