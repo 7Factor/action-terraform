@@ -110,7 +110,48 @@ ${outcome !== 'skipped' ? createTestDetails(stdout, stderr) : ''}
     ` : '';
 }
 
-const createPlanDetails = (stdout, stderr) => {
+const createPlanExcerptSourceNote = (excerptSource) => {
+    if (excerptSource === 'plan-summary') {
+        return 'This excerpt starts at the Terraform summary line (`Plan: ...`).';
+    }
+
+    if (excerptSource === 'tail') {
+        return 'The Terraform summary line was not found, so this excerpt shows the tail of combined stdout/stderr output.';
+    }
+
+    return 'This excerpt shows a truncated portion of the Terraform plan output.';
+};
+
+const createPlanDetails = ({stdout, stderr, overflowed, excerptSource, logsUrl}) => {
+    if (overflowed) {
+        const workflowLogs = logsUrl ? `[workflow run logs](${logsUrl})` : 'workflow run logs';
+        const excerptSourceNote = createPlanExcerptSourceNote(excerptSource);
+        const excerptOutput = stdout
+            ? `
+\`\`\`hcl\n
+${stdout}
+\`\`\`
+`
+            : `
+_No plan excerpt was available in this comment._
+`;
+
+        return `
+
+<details><summary>Show Plan</summary>
+
+Terraform plan output exceeded size constraints, so this comment includes only a partial excerpt.
+
+${excerptSourceNote}
+
+View the full plan output in the ${workflowLogs}.
+
+${excerptOutput}
+
+</details>
+    `;
+    }
+
     return `
 
 <details><summary>Show Plan</summary>
@@ -123,11 +164,11 @@ ${stdout}${stderr ? `\n${stderr}` : ''}
     `;
 };
 
-const createPlanOutput = ({enabled, outcome, stdout, stderr}) => {
+const createPlanOutput = ({enabled, outcome, stdout, stderr, overflowed, excerptSource, logsUrl}) => {
     return enabled ? `
 
 #### Terraform Plan 📖 \`${outcome}\`
-${outcome !== 'skipped' ? createPlanDetails(stdout, stderr) : ''}
+${outcome !== 'skipped' ? createPlanDetails({stdout, stderr, overflowed, excerptSource, logsUrl}) : ''}
     ` : '';
 };
 

@@ -277,13 +277,17 @@ runs:
       id: plan
       if: inputs.action == 'plan'
       working-directory: ${{ inputs.directory }}
+      env:
+        TF_CLI: ${{ inputs.tf-cli }}
+        TF_PLAN_NO_COLOR: ${{ github.event_name == 'pull_request' && '-no-color' || '' }}
+        TF_PLAN_DESTROY: ${{ fromJSON(inputs.destroy) && '-destroy' || '' }}
+        TF_PLAN_OUT: ${{ inputs.plan-file-name && format('-out={0}', inputs.plan-file-name) || '' }}
+        TF_PLAN_ACTION_ARGS: ${{ inputs.action-args }}
+        PLAN_COMMENT_MAX_BYTES: '60000'
+        PLAN_COMMENT_EXCERPT_MAX_BYTES: '12288'
       shell: bash
       run: |
-        ${{ inputs.tf-cli }} plan -input=false \
-          ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
-          ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
-          ${{ inputs.plan-file-name && format('-out={0}', inputs.plan-file-name) || '' }} \
-          ${{ inputs.action-args }}
+        bash "${{ github.action_path }}/scripts/terraform_plan.sh"
 
     - name: Encrypt Plan
       if: inputs.action == 'plan' && inputs.plan-file-name && inputs.encrypted-plan-password
@@ -367,8 +371,11 @@ runs:
         validateStderr: ${{ steps.validate.outputs.stderr }}
         testStdout: ${{ steps.test.outputs.stdout }}
         testStderr: ${{ steps.test.outputs.stderr }}
-        planStdout: ${{ steps.plan.outputs.stdout }}
-        planStderr: ${{ steps.plan.outputs.stderr }}
+        planCommentStdout: ${{ steps.plan.outputs.comment_stdout }}
+        planCommentStderr: ${{ steps.plan.outputs.comment_stderr }}
+        planCommentOverflow: ${{ steps.plan.outputs.comment_overflow }}
+        planCommentExcerptSource: ${{ steps.plan.outputs.comment_excerpt_source }}
+        workflowRunUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ job.check_run_id }}
         outputStdout: ${{ steps.output.outputs.stdout }}
         outputStderr: ${{ steps.output.outputs.stderr }}
       with:
@@ -410,8 +417,11 @@ runs:
             plan: {
               enabled: ${{ inputs.action == 'plan' }},
               outcome: "${{ steps.plan.outcome }}",
-              stdout: `${process.env.planStdout}`,
-              stderr: `${process.env.planStderr}`
+              stdout: `${process.env.planCommentStdout}`,
+              stderr: `${process.env.planCommentStderr}`,
+              overflowed: `${process.env.planCommentOverflow}` === 'true',
+              excerptSource: `${process.env.planCommentExcerptSource}`,
+              logsUrl: `${process.env.workflowRunUrl}`
             },
             output: {
               enabled: ${{ inputs.action == 'output' }},
