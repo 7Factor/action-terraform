@@ -279,11 +279,51 @@ runs:
       working-directory: ${{ inputs.directory }}
       shell: bash
       run: |
+        PLAN_COMMENT_MAX_BYTES=60000
+        plan_stdout_file=$(mktemp)
+        plan_stderr_file=$(mktemp)
+
+        cleanup_plan_files() {
+          rm -f "$plan_stdout_file" "$plan_stderr_file"
+        }
+        trap cleanup_plan_files EXIT
+
+        set +e
         ${{ inputs.tf-cli }} plan -input=false \
           ${{ github.event_name == 'pull_request' && '-no-color' || '' }} \
           ${{ fromJSON(inputs.destroy) && '-destroy' || '' }} \
           ${{ inputs.plan-file-name && format('-out={0}', inputs.plan-file-name) || '' }} \
-          ${{ inputs.action-args }}
+          ${{ inputs.action-args }} \
+          > >(tee "$plan_stdout_file") \
+          2> >(tee "$plan_stderr_file" >&2)
+        plan_exit_code=$?
+        set -e
+
+        plan_stdout_bytes=$(wc -c < "$plan_stdout_file" | tr -d '[:space:]')
+        plan_stderr_bytes=$(wc -c < "$plan_stderr_file" | tr -d '[:space:]')
+        plan_total_bytes=$((plan_stdout_bytes + plan_stderr_bytes))
+
+        if [ "$plan_total_bytes" -le "$PLAN_COMMENT_MAX_BYTES" ]; then
+          plan_stdout_delimiter="PLAN_STDOUT_$(date +%s)_$RANDOM"
+          plan_stderr_delimiter="PLAN_STDERR_$(date +%s)_$RANDOM"
+          {
+            echo "comment_overflow=false"
+            echo "comment_stdout<<$plan_stdout_delimiter"
+            cat "$plan_stdout_file"
+            echo "$plan_stdout_delimiter"
+            echo "comment_stderr<<$plan_stderr_delimiter"
+            cat "$plan_stderr_file"
+            echo "$plan_stderr_delimiter"
+          } >> "$GITHUB_OUTPUT"
+        else
+          {
+            echo "comment_overflow=true"
+            echo "comment_stdout="
+            echo "comment_stderr="
+          } >> "$GITHUB_OUTPUT"
+        fi
+
+        exit "$plan_exit_code"
 
     - name: Encrypt Plan
       if: inputs.action == 'plan' && inputs.plan-file-name && inputs.encrypted-plan-password
@@ -367,8 +407,10 @@ runs:
         validateStderr: ${{ steps.validate.outputs.stderr }}
         testStdout: ${{ steps.test.outputs.stdout }}
         testStderr: ${{ steps.test.outputs.stderr }}
-        planStdout: ${{ steps.plan.outputs.stdout }}
-        planStderr: ${{ steps.plan.outputs.stderr }}
+        planCommentStdout: ${{ steps.plan.outputs.comment_stdout }}
+        planCommentStderr: ${{ steps.plan.outputs.comment_stderr }}
+        planCommentOverflow: ${{ steps.plan.outputs.comment_overflow }}
+        workflowRunUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         outputStdout: ${{ steps.output.outputs.stdout }}
         outputStderr: ${{ steps.output.outputs.stderr }}
       with:
@@ -410,8 +452,10 @@ runs:
             plan: {
               enabled: ${{ inputs.action == 'plan' }},
               outcome: "${{ steps.plan.outcome }}",
-              stdout: `${process.env.planStdout}`,
-              stderr: `${process.env.planStderr}`
+              stdout: `${process.env.planCommentStdout}`,
+              stderr: `${process.env.planCommentStderr}`,
+              overflowed: `${process.env.planCommentOverflow}` === 'true',
+              logsUrl: `${process.env.workflowRunUrl}`
             },
             output: {
               enabled: ${{ inputs.action == 'output' }},

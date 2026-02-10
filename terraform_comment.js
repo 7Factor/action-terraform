@@ -110,7 +110,21 @@ ${outcome !== 'skipped' ? createTestDetails(stdout, stderr) : ''}
     ` : '';
 }
 
-const createPlanDetails = (stdout, stderr) => {
+const createPlanDetails = ({stdout, stderr, overflowed, logsUrl}) => {
+    if (overflowed) {
+        const workflowLogs = logsUrl ? `[workflow run logs](${logsUrl})` : 'workflow run logs';
+        return `
+
+<details><summary>Show Plan</summary>
+
+Terraform plan output was omitted because it exceeds size constraints.
+
+Instead, you can view the plan output in the ${workflowLogs}.
+
+</details>
+    `;
+    }
+
     return `
 
 <details><summary>Show Plan</summary>
@@ -123,11 +137,11 @@ ${stdout}${stderr ? `\n${stderr}` : ''}
     `;
 };
 
-const createPlanOutput = ({enabled, outcome, stdout, stderr}) => {
+const createPlanOutput = ({enabled, outcome, stdout, stderr, overflowed, logsUrl}) => {
     return enabled ? `
 
 #### Terraform Plan 📖 \`${outcome}\`
-${outcome !== 'skipped' ? createPlanDetails(stdout, stderr) : ''}
+${outcome !== 'skipped' ? createPlanDetails({stdout, stderr, overflowed, logsUrl}) : ''}
     ` : '';
 };
 
